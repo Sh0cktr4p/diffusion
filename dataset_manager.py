@@ -19,9 +19,10 @@ def rgba_to_rgb_img_loader(path):
 
 
 class DatasetManager:
-    def __init__(self, dataset: data.Dataset, batch_size: int):
+    def __init__(self, dataset: data.Dataset, batch_size: int, img_size: int):
         self.dataset = dataset
         self.batch_size = batch_size
+        self.img_size = img_size
         self.loader = self._get_dataloader(
             dataset=dataset,
             batch_size=batch_size
@@ -72,7 +73,7 @@ class DatasetManager:
 class ImageFolderDatasetManager(DatasetManager):
     def __init__(self, root: str, image_size: int, batch_size: int):
         dataset = ImageFolderDatasetManager._get_dataset(root, image_size)
-        super().__init__(dataset, batch_size)
+        super().__init__(dataset, batch_size, image_size)
 
     @staticmethod
     def _get_dataset(root: str, image_size: int):
@@ -86,7 +87,7 @@ class ImageFolderDatasetManager(DatasetManager):
 class MNISTImageDatasetManager(DatasetManager):
     def __init__(self, image_size: int, batch_size: int):
         dataset = MNISTImageDatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size)
+        super().__init__(dataset, batch_size, image_size)
 
     @staticmethod
     def _get_dataset(image_size: int):
@@ -100,7 +101,7 @@ class MNISTImageDatasetManager(DatasetManager):
 class StanfordCarsDatasetManager(DatasetManager):
     def __init__(self, image_size: int, batch_size: int):
         dataset = StanfordCarsDatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size)
+        super().__init__(dataset, batch_size, image_size)
 
     @staticmethod
     def _get_dataset(image_size: int):

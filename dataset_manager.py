@@ -50,7 +50,7 @@ class DatasetManager:
         ])
 
     @staticmethod
-    def _to_pil_image(tensor: th.Tensor) -> Image:
+    def _to_pil_image(tensor: th.Tensor) -> Image.Image:
         reverse_transform = torchvision.transforms.Compose([
             torchvision.transforms.Lambda(lambda x: x.clamp(-1, 1)),
             torchvision.transforms.Normalize(
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     T = 1000
 
     img_batch = next(iter(dl.loader))[0]
-    plt.figure(figsize=(15, 15))
+    plt.figure(figsize=(15, 5))
     plt.axis("off")
     num_images = 10
     step_size = int(T / num_images)

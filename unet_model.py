@@ -5,14 +5,15 @@ import torch.nn as nn
 
 
 class SinusoidalPositionEmbedding(nn.Module):
-    def __init__(self, dim: int):
+    def __init__(self, dim: int, theta: int = 10000):
         super().__init__()
         self.dim = dim
+        self.theta = theta
 
     def forward(self, t: th.Tensor):
         device = t.device
         half_dim = self.dim // 2
-        emb = math.log(10000) / (half_dim - 1)
+        emb = math.log(self.theta) / (half_dim - 1)
         emb = th.exp(th.arange(half_dim, device=device) * -emb)
         emb = t.reshape(-1, 1) * emb.reshape(1, -1)
         emb = th.cat((emb.sin(), emb.cos()), dim=-1)
@@ -79,12 +80,10 @@ class UNetBlock(nn.Module):
 
 
 class SimpleUNet(nn.Module):
-    def __init__(self):
+    def __init__(self, image_channels: int = 3, out_dim: int = 1):
         super().__init__()
-        image_channels = 3
-        down_channels = (64, 128, 256, 512, 512)
-        up_channels = (512, 512, 256, 128, 64)
-        out_dim = 1
+        down_channels = (64, 128, 256, 512, 1024)
+        up_channels = (1024, 512, 256, 128, 64)
         time_emb_dim = 32
 
         # Time embedding
@@ -146,7 +145,7 @@ class SimpleUNet(nn.Module):
 
 
 if __name__ == '__main__':
-    model = SimpleUNet()
+    model = SimpleUNet().cuda()
     print(
         "Num params: ",
         sum(p.numel() for p in model.parameters() if p.requires_grad)

@@ -4,7 +4,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dataset_manager import DatasetManager
+from gen_ai_toolbox.datasets import DatasetManager
 
 
 class WGANGPTrainer:

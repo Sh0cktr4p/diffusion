@@ -2,7 +2,7 @@ from functools import partial
 
 from omegaconf import OmegaConf
 
-from dataset_manager import (
+from .dataset_manager import (
     DatasetManager,
     ImageFolderDatasetManager,
     MNISTDatasetManager,

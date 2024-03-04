@@ -11,7 +11,7 @@ import imageio
 
 from PIL import Image
 
-from noise_schedule import NoiseSchedule
+from .noise_schedule import NoiseSchedule
 
 from gen_ai_toolbox.training import GenerativeModel
 from gen_ai_toolbox.datasets import DatasetManager

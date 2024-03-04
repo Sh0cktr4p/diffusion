@@ -2,7 +2,7 @@ import torch.nn as nn
 
 from omegaconf import OmegaConf
 
-import diffusion
+from . import diffusion
 
 
 MODELS = {

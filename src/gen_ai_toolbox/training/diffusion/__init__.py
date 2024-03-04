@@ -1,11 +1,11 @@
 from omegaconf import OmegaConf
 
-import noise_schedule
+from . import noise_schedule
 
 from gen_ai_toolbox.models import from_config as model_from_config
 from gen_ai_toolbox.datasets import from_config as dataset_from_config
 
-from diffusion_model import DiffusionModel
+from .diffusion_model import DiffusionModel
 
 
 NOISE_SCHEDULES = {

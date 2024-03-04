@@ -1,23 +1,8 @@
-import math
-
 import torch as th
 import torch.nn as nn
 
 
-class SinusoidalPositionEmbedding(nn.Module):
-    def __init__(self, dim: int, theta: int = 10000):
-        super().__init__()
-        self.dim = dim
-        self.theta = theta
-
-    def forward(self, t: th.Tensor):
-        device = t.device
-        half_dim = self.dim // 2
-        emb = math.log(self.theta) / (half_dim - 1)
-        emb = th.exp(th.arange(half_dim, device=device) * -emb)
-        emb = t.reshape(-1, 1) * emb.reshape(1, -1)
-        emb = th.cat((emb.sin(), emb.cos()), dim=-1)
-        return emb
+from sinusoidal_position_embedding import SinusoidalPositionEmbedding
 
 
 class UNetBlock(nn.Module):
@@ -80,10 +65,10 @@ class UNetBlock(nn.Module):
 
 
 class SimpleUNet(nn.Module):
-    def __init__(self, image_channels: int = 3, out_dim: int = 1):
+    def __init__(self, image_channels: int = 3, out_channels: int = 3):
         super().__init__()
-        down_channels = (64, 128, 256, 512, 1024)
-        up_channels = (1024, 512, 256, 128, 64)
+        down_channels = (64, 128, 256, 512, 512)
+        up_channels = (512, 512, 256, 128, 64)
         time_emb_dim = 32
 
         # Time embedding
@@ -123,8 +108,9 @@ class SimpleUNet(nn.Module):
 
         self.output = nn.Conv2d(
             up_channels[-1],
-            3,
-            out_dim,
+            out_channels=out_channels,
+            kernel_size=3,
+            padding=1,
         )
 
     def forward(self, x, t):

@@ -19,12 +19,28 @@ def rgba_to_rgb_img_loader(path):
 
 
 class DatasetManager:
-    def __init__(self, dataset: data.Dataset, batch_size: int, img_size: int):
-        self.dataset = dataset
+    def __init__(
+        self,
+        dataset: data.Dataset,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1,
+    ):
+        self.train_set, self.val_set = data.random_split(
+            dataset,
+            [
+                int(len(dataset) * (1 - val_split)),
+                int(len(dataset) * val_split),
+            ]
+        )
         self.batch_size = batch_size
         self.img_size = img_size
-        self.loader = self._get_dataloader(
-            dataset=dataset,
+        self.train_loader = self._get_dataloader(
+            dataset=self.train_set,
+            batch_size=batch_size
+        )
+        self.val_loader = self._get_dataloader(
+            dataset=self.val_set,
             batch_size=batch_size
         )
 
@@ -62,18 +78,31 @@ class DatasetManager:
 
         return reverse_transform(tensor)
 
-    def show_images(self, num_samples=20, cols=4):
+    def show_images(self, num_samples=20, cols=4, from_train_set: bool = True):
         plt.figure(figsize=(10, 10))
-        for i, img in list(enumerate(self.dataset))[:num_samples]:
+        for i, img in list(enumerate(
+            self.train_set if from_train_set else self.val_set
+        ))[:num_samples]:
             plt.subplot(num_samples // cols + 1, cols, i + 1)
             plt.imshow(img[0].permute(1, 2, 0))
         plt.show()
 
 
 class ImageFolderDatasetManager(DatasetManager):
-    def __init__(self, root: str, image_size: int, batch_size: int):
-        dataset = ImageFolderDatasetManager._get_dataset(root, image_size)
-        super().__init__(dataset, batch_size, image_size)
+    def __init__(
+        self,
+        root: str,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1
+    ):
+        dataset = ImageFolderDatasetManager._get_dataset(root, img_size)
+        super().__init__(
+            dataset=dataset,
+            batch_size=batch_size,
+            img_size=img_size,
+            val_split=val_split,
+        )
 
     @staticmethod
     def _get_dataset(root: str, image_size: int):
@@ -85,9 +114,19 @@ class ImageFolderDatasetManager(DatasetManager):
 
 
 class MNISTDatasetManager(DatasetManager):
-    def __init__(self, image_size: int, batch_size: int):
-        dataset = MNISTDatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size, image_size)
+    def __init__(
+        self,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1,
+    ):
+        dataset = MNISTDatasetManager._get_dataset(img_size)
+        super().__init__(
+            dataset=dataset,
+            batch_size=batch_size,
+            img_size=img_size,
+            val_split=val_split,
+        )
 
     @staticmethod
     def _get_dataset(image_size: int):
@@ -99,9 +138,14 @@ class MNISTDatasetManager(DatasetManager):
 
 
 class StanfordCarsDatasetManager(DatasetManager):
-    def __init__(self, image_size: int, batch_size: int):
-        dataset = StanfordCarsDatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size, image_size)
+    def __init__(
+        self,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1,
+    ):
+        dataset = StanfordCarsDatasetManager._get_dataset(img_size)
+        super().__init__(dataset, batch_size, img_size)
 
     @staticmethod
     def _get_dataset(image_size: int):
@@ -113,9 +157,19 @@ class StanfordCarsDatasetManager(DatasetManager):
 
 
 class CelebADatasetManager(DatasetManager):
-    def __init__(self, image_size: int, batch_size: int):
-        dataset = CelebADatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size, image_size)
+    def __init__(
+        self,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1,
+    ):
+        dataset = CelebADatasetManager._get_dataset(img_size)
+        super().__init__(
+            dataset=dataset,
+            batch_size=batch_size,
+            img_size=img_size,
+            val_split=val_split,
+        )
 
     @staticmethod
     def _get_dataset(image_size: int):
@@ -127,9 +181,19 @@ class CelebADatasetManager(DatasetManager):
 
 
 class ImageNetDatasetManager(DatasetManager):
-    def __init__(self, image_size: int, batch_size: int):
-        dataset = ImageNetDatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size, image_size)
+    def __init__(
+        self,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1,
+    ):
+        dataset = ImageNetDatasetManager._get_dataset(img_size)
+        super().__init__(
+            dataset=dataset,
+            batch_size=batch_size,
+            img_size=img_size,
+            val_split=val_split,
+        )
 
     @staticmethod
     def _get_dataset(image_size: int):
@@ -141,9 +205,19 @@ class ImageNetDatasetManager(DatasetManager):
 
 
 class CIFAR10DatasetManager(DatasetManager):
-    def __init__(self, image_size: int, batch_size: int):
-        dataset = CIFAR10DatasetManager._get_dataset(image_size)
-        super().__init__(dataset, batch_size, image_size)
+    def __init__(
+        self,
+        batch_size: int,
+        img_size: int,
+        val_split: float = 0.1,
+    ):
+        dataset = CIFAR10DatasetManager._get_dataset(img_size)
+        super().__init__(
+            dataset=dataset,
+            batch_size=batch_size,
+            img_size=img_size,
+            val_split=val_split,
+        )
 
     @staticmethod
     def _get_dataset(image_size: int):
@@ -155,27 +229,31 @@ class CIFAR10DatasetManager(DatasetManager):
 
 
 if __name__ == '__main__':
-    from forward_process import CosScForwardProcess
+    from gen_ai_toolbox.training.diffusion.noise_schedule import (
+        LinearNoiseSchedule
+    )
 
     dl = ImageFolderDatasetManager(
         root="data/pokemon",
-        image_size=64,
+        img_size=64,
         batch_size=32
     )
 
     T = 1000
 
-    img_batch = next(iter(dl.loader))[0]
+    img_batch = next(iter(dl.train_loader))[0]
     plt.figure(figsize=(15, 5))
     plt.axis("off")
     num_images = 10
     step_size = int(T / num_images)
 
+    noise_schedule = LinearNoiseSchedule(T)
+
     for i in range(0, T, step_size):
         print(i)
         t = th.tensor([i], dtype=th.int64)
         plt.subplot(1, num_images + 1, (i // step_size) + 1)
-        noisy_batch, noise = CosScForwardProcess(T)(img_batch, t)
+        noisy_batch, noise = noise_schedule.diffuse(img_batch, t)
         plt.imshow(dl._to_pil_image(noisy_batch[0]))
 
     plt.show()

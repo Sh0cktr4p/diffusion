@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gen_ai_toolbox"
+authors = [
+    {name = "Felix Trost", email = "fxtrost@gmail.com"},
+]
+description = "A toolbox of generative models for image synthesis"
+readme = "README.md"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+    "hydra-core",
+    "torch",
+    "torchvision",
+    "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

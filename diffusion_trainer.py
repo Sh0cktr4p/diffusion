@@ -25,16 +25,18 @@ class DiffusionTrainer:
         forward_process: nn.Module,
         dataset_manager: DatasetManager,
         device: th.device,
+        lr_scheduler: th.optim.lr_scheduler._LRScheduler | None = None,
     ):
         self.model = model.to(device)
         self.optimizer = optimizer
         self.forward_process = forward_process.to(device)
         self.dataset_manager = dataset_manager
+        self.lr_scheduler = lr_scheduler
         self.device = device
 
     def get_simple_loss(self, x_0, t):
         x_noisy, noise = self.forward_process(x_0, t)
-        return F.mse_loss(self.model(x_noisy, t), noise)
+        return F.mse_loss(noise, self.model(x_noisy, t))
 
     def get_vlb_loss(self, x_0, t):
         pass
@@ -71,8 +73,10 @@ class DiffusionTrainer:
                 )
                 loss.backward()
                 self.optimizer.step()
+            if self.lr_scheduler is not None:
+                self.lr_scheduler.step()
 
-            if epoch % 50 == 0:
+            if epoch % 1 == 0:
                 print(f"Epoch {epoch}: Loss {loss.item()}")
                 if plot_checkpoints:
                     self.sample_to_plot(10)
@@ -87,20 +91,26 @@ class DiffusionTrainer:
 
     @th.inference_mode()
     def sample_timestep(self, x: th.Tensor, t: th.Tensor):
-        x_prev = (
+        train_mode_active = self.model.training
+        self.model.eval()
+        mu = self.forward_process.div_sqrt_alphas[t] * (
             x - (
                 self.model(x, t) * self.forward_process.betas[t] /
                 self.forward_process.sqrt_one_minus_cum_alphas[t]
             )
-        ) / self.forward_process.sqrt_alphas[t]
+        )
 
         # sigma = self.forward_process.sqrt_betas[t] if t > 0 else 0
-        sigma = self.forward_process.sqrt_post_variance[t] if t > 0 else 0
+        sigma = self.forward_process.sqrt_post_variance[t] if t[0] > 0 else 0
         noise = th.randn_like(x) * sigma
-        return x_prev + noise
+        if train_mode_active:
+            self.model.train()
+        return mu + noise
 
     @th.inference_mode()
     def sample(self) -> List[Image.Image]:
+        train_mode_active = self.model.training
+        self.model.eval()
         img_size = self.dataset_manager.img_size
         img = th.randn(1, 3, img_size, img_size).to(self.device)
         T = self.forward_process.T
@@ -110,6 +120,27 @@ class DiffusionTrainer:
             t = th.full((1,), i, dtype=th.long, device=self.device)
             img = self.sample_timestep(img, t)
             imgs.append(self.dataset_manager._to_pil_image(img[0]))
+
+        if train_mode_active:
+            self.model.train()
+
+        return imgs
+
+    @th.inference_mode()
+    def render_batch(self, batch_size: int) -> List[Image.Image]:
+        train_mode_active = self.model.training
+        self.model.eval()
+        img_size = self.dataset_manager.img_size
+        imgs = th.randn(batch_size, 3, img_size, img_size).to(self.device)
+        T = self.forward_process.T
+        for i in range(T - 1, -1, -1):
+            print(i)
+            t = th.full((batch_size,), i, dtype=th.long, device=self.device)
+            imgs = self.sample_timestep(imgs, t)
+
+        imgs = [self.dataset_manager._to_pil_image(img) for img in imgs]
+        if train_mode_active:
+            self.model.train()
 
         return imgs
 
@@ -124,7 +155,7 @@ class DiffusionTrainer:
 
     def sample_to_video(self, path: str):
         imgs = self.sample()
-        writer = imageio.get_writer(path, fps=10)
+        writer = imageio.get_writer(path, fps=60)
         for img in imgs:
             writer.append_data(np.array(img))
         writer.close()
@@ -138,34 +169,50 @@ if __name__ == '__main__':
     from dataset_manager import (  # noqa: F401
         ImageFolderDatasetManager,
         MNISTImageDatasetManager,
+        ImageNetDatasetManager,
+        StanfordCarsDatasetManager,
+        CIFAR10DatasetManager,
+        CelebADatasetManager,
     )
     from forward_process import (  # noqa: F401
         LinScForwardProcess,
         CosScForwardProcess,
     )
     from unet_model import SimpleUNet
+    from my_unet import UNet
 
+    th.random.manual_seed(0)
     device = "cuda"
     model = SimpleUNet().to(device)
-    dm = ImageFolderDatasetManager(
-        root="data/pokemon",
-        image_size=64,
-        batch_size=32
-    )
+    model.load_state_dict(th.load("models/celeba_18_su.pt"))
+    # model = UNet().to(device)
+    # dm = ImageFolderDatasetManager(
+    #     root="data/pokemon",
+    #     image_size=64,
+    #     batch_size=128
+    # )
+    # dm = CIFAR10DatasetManager(32, 128)
+    dm = CelebADatasetManager(64, 128)
     # dm = MNISTImageDatasetManager(batch_size=32, image_size=64)
-    fp = CosScForwardProcess(1000).to(device)
-    optimizer = th.optim.Adam(model.parameters(), lr=3e-4)
+    fp = LinScForwardProcess(1000).to(device)
+    # fp = CosScForwardProcess(1000, 0.008).to(device)
+    optimizer = th.optim.Adam(model.parameters(), lr=2e-4)
+    # scheduler = th.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
     trainer = DiffusionTrainer(model, optimizer, fp, dm, device)
+
+    # trainer.sample_to_video(
+    #     "gifs/pokemon/id.mp4"
+    # )
     trainer.train(
-        1001,
+        5001,
         plot_checkpoints=False,
-        checkpoint_video_path="gifs/pokemon",
-        model_save_path="models/pokemon.pt"
+        checkpoint_video_path="gifs/celeba/comp/",
+        model_save_path="models/celeba_su.pt"
     )
-    imgs = trainer.sample()
-    plt.figure(figsize=(15, 15))
-    plt.axis("off")
-    for i, img in enumerate(imgs):
-        plt.subplot(1, len(imgs), i + 1)
-        plt.imshow(img)
-    plt.show()
+    # imgs = trainer.sample()
+    # plt.figure(figsize=(15, 15))
+    # plt.axis("off")
+    # for i, img in enumerate(imgs):
+    #     plt.subplot(1, len(imgs), i + 1)
+    #     plt.imshow(img)
+    # plt.show()

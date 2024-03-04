@@ -29,8 +29,8 @@ class ForwardProcess(nn.Module):
             persistent=False,
         )
         self.register_buffer(
-            "sqrt_alphas",
-            th.sqrt(alphas),
+            "div_sqrt_alphas",
+            th.sqrt(1 / alphas),
             persistent=False,
         )
         self.register_buffer(
@@ -86,20 +86,17 @@ class CosScForwardProcess(ForwardProcess):
             (th.linspace(0, 1, T) + start) / (1 + start) * th.pi / 2
         ) ** 2
         cum_alphas = (f / f[0]).reshape(-1, 1, 1, 1)
-        alphas = th.min(
-            (cum_alphas / th.cat(
-                [th.ones(1, 1, 1, 1), cum_alphas[:-1]],
-                dim=0,
-            )),
-            th.tensor(0.999)
-        )
+        alphas = (cum_alphas / th.cat(
+            [th.ones(1, 1, 1, 1), cum_alphas[:-1]],
+            dim=0,
+        )).clamp(0.001)
         betas = 1 - alphas
-        return betas, 1 - betas, cum_alphas
+        return betas, alphas, cum_alphas
 
 
 if __name__ == '__main__':
-    ls = LinScForwardProcess(100, 0.0001)
-    cs = CosScForwardProcess(100, 0.008)
+    ls = LinScForwardProcess(1000, 0.0001)
+    cs = CosScForwardProcess(1000, 0.0001)
 
     import matplotlib.pyplot as plt
 
@@ -108,11 +105,11 @@ if __name__ == '__main__':
     print(ls.betas.squeeze())
 
     axs[0, 0].plot(ls.betas.squeeze())
-    # axs[0, 0].plot(cs.betas.squeeze())
+    axs[0, 0].plot(cs.betas.squeeze())
     axs[0, 0].set_title("betas")
 
-    axs[0, 1].plot(((ls.sqrt_post_variance ** 2) / ls.betas).squeeze())
-    axs[0, 1].plot(((cs.sqrt_post_variance ** 2) / cs.betas).squeeze())
+    axs[0, 1].plot(th.cumprod(1 - ls.betas, dim=0).squeeze())
+    axs[0, 1].plot(th.cumprod(1 - cs.betas, dim=0).squeeze())
     axs[0, 1].set_title("sqrt_alphas")
 
     axs[1, 0].plot((ls.sqrt_cum_alphas ** 2).squeeze())

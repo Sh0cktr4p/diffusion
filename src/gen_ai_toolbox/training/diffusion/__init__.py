@@ -26,7 +26,7 @@ def noise_schedule_from_config(noise_schedule_config: OmegaConf):
 
 
 def from_config(config: OmegaConf):
-    assert config.type == "diffusion"
+    assert config.type == "Diffusion"
     assert hasattr(config, "noise_schedule") and \
         config.noise_schedule is not None
     assert hasattr(config, "model") and config.model is not None
@@ -46,4 +46,5 @@ def from_config(config: OmegaConf):
         model=model,
         noise_schedule=noise_schedule,
         image_size=img_size,
-    )
+        image_channels=config.model.image_channels,
+    ).to(config.device)

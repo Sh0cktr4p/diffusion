@@ -2,20 +2,28 @@ type: Diffusion
 dataset:
   id: CelebA
   params:
-    image_size: 64
+    img_size: 64
     batch_size: 128
     val_split: 0.1
 model:
   id: SimpleUNet
   params: {}
+  image_channels: 3
+noise_schedule:
+  id: Linear
+  params:
+    T: 1000
+    start: 1e-4
+    end: 2e-2
 training:
   optimizer:
     id: Adam
     params:
       lr: 3e-4
   lr_schedule: null
-  verbose: true
   debug: true
   n_epochs: 100
+verbose: true
 initial_epoch: 0
 artifact_dir: models/celebrity-diffusion
+device: cuda

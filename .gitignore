@@ -7,3 +7,4 @@ renders/*
 *.egg
 *.egg-info
 .vscode
+outputs/

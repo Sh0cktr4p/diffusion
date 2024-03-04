@@ -4,8 +4,8 @@ import torch as th
 
 from omegaconf import OmegaConf
 
-from .diffusion import from_config as diffusion_from_config
 from gen_ai_toolbox.training.generative_model import GenerativeModel
+from . import diffusion
 from gen_ai_toolbox.datasets import from_config as dataset_from_config
 from gen_ai_toolbox.utils.training_callback import (
     TrainingCallback,
@@ -27,18 +27,19 @@ LR_SCHEDULES = {
 def generative_model_from_config(config: OmegaConf) -> GenerativeModel:
     assert hasattr(config, "type") and config.type is not None
     if config.type == "Diffusion":
-        model = diffusion_from_config(config)
-        if config.training.start_epoch > 0:
+        model = diffusion.from_config(config)
+        if config.initial_epoch > 0:
             model.load_model_state_dict(
                 os.path.join(
                     config.training.artifact_dir,
                     SaveArtifactCallback.get_epoch_path(
                         config.artifact_dir,
-                        config.start_epoch,
+                        config.initial_epoch,
                     ),
                     "model.pt",
                 ),
             )
+        return model
     else:
         raise ValueError(f"Unknown trainer type {config.type}.")
 

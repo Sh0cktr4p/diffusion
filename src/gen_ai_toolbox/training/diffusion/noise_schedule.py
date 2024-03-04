@@ -3,7 +3,7 @@ from typing import Tuple
 import torch as th
 import torch.nn as nn
 
-from src.gen_ai_toolbox.utils.torch_context_managers import eval
+from gen_ai_toolbox.utils.torch_context_managers import eval
 
 
 class NoiseSchedule(nn.Module):

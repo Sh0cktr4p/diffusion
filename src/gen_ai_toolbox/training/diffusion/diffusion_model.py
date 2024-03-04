@@ -13,13 +13,13 @@ from PIL import Image
 
 from .noise_schedule import NoiseSchedule
 
-from gen_ai_toolbox.training import GenerativeModel
+from gen_ai_toolbox import training
 from gen_ai_toolbox.datasets import DatasetManager
 from gen_ai_toolbox.utils.training_callback import TrainingCallback
 from gen_ai_toolbox.utils.torch_context_managers import eval, train
 
 
-class DiffusionModel(GenerativeModel):
+class DiffusionModel(training.GenerativeModel):
     def __init__(
         self,
         model: nn.Module,

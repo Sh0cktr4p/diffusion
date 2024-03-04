@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import torch as th
 import torch.nn as nn
 
@@ -64,14 +66,50 @@ class NoiseSchedule(nn.Module):
             persistent=False,
         )
 
-    def forward(self, x_0: th.Tensor, t: th.Tensor):
+    def diffuse(
+        self,
+        x_0: th.Tensor,
+        t: th.Tensor,
+    ) -> Tuple[th.Tensor, th.Tensor]:
         noise = th.randn_like(x_0)
 
         return (
             self.sqrt_cum_alphas[t] * x_0 +
             self.sqrt_one_minus_cum_alphas[t] * noise,
-            noise
+            noise,
         )
+
+    @th.inference_mode()
+    def predict_mu(
+        self,
+        model: nn.Module,
+        x: th.Tensor,
+        t: th.Tensor,
+    ) -> th.Tensor:
+        return self.div_sqrt_alphas[t] * (
+            x - (
+                model(x, t) * self.betas[t] /
+                self.sqrt_one_minus_cum_alphas[t]
+            )
+        )
+
+    @th.inference_mode()
+    def predict_sigma(
+        self,
+        t: th.Tensor,
+    ) -> th.Tensor:
+        return self.sqrt_post_variance[t] if t[0] > 0 else 0
+
+    @th.inference_mode()
+    def sample_timestep(
+        self,
+        x: th.Tensor,
+        t: th.Tensor,
+    ) -> th.Tensor:
+        mu = self.predict_mu(x, t)
+        sigma = self.predict_sigma(t)
+        noise = th.randn_like(x) * sigma
+        return mu + noise
 
 
 class LinearNoiseSchedule(NoiseSchedule):
@@ -127,7 +165,7 @@ if __name__ == '__main__':
     axs[1, 0].set_title("sqrt_cum_alphas")
 
     axs[1, 1].plot((ls.sqrt_post_variance ** 2).squeeze())
-    # axs[1, 1].plot((cs.sqrt_post_variance ** 2).squeeze())
+    axs[1, 1].plot((cs.sqrt_post_variance ** 2).squeeze())
     axs[1, 1].set_title("sqrt_post_variance")
 
     plt.legend(["LinSc", "CosSc"])

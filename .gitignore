@@ -3,3 +3,7 @@ __pycache__/
 gifs/
 models/*
 papers/
+renders/*
+*.egg
+*.egg-info
+.vscode

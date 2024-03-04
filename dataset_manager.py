@@ -112,6 +112,48 @@ class StanfordCarsDatasetManager(DatasetManager):
         )
 
 
+class CelebADatasetManager(DatasetManager):
+    def __init__(self, image_size: int, batch_size: int):
+        dataset = CelebADatasetManager._get_dataset(image_size)
+        super().__init__(dataset, batch_size, image_size)
+
+    @staticmethod
+    def _get_dataset(image_size: int):
+        return torchvision.datasets.CelebA(
+            root="data/",
+            transform=CelebADatasetManager._get_transform(image_size),
+            download=True,
+        )
+
+
+class ImageNetDatasetManager(DatasetManager):
+    def __init__(self, image_size: int, batch_size: int):
+        dataset = ImageNetDatasetManager._get_dataset(image_size)
+        super().__init__(dataset, batch_size, image_size)
+
+    @staticmethod
+    def _get_dataset(image_size: int):
+        return torchvision.datasets.ImageNet(
+            root="data/",
+            transform=ImageNetDatasetManager._get_transform(image_size),
+            download=True,
+        )
+
+
+class CIFAR10DatasetManager(DatasetManager):
+    def __init__(self, image_size: int, batch_size: int):
+        dataset = CIFAR10DatasetManager._get_dataset(image_size)
+        super().__init__(dataset, batch_size, image_size)
+
+    @staticmethod
+    def _get_dataset(image_size: int):
+        return torchvision.datasets.CIFAR10(
+            root="data/",
+            transform=CIFAR10DatasetManager._get_transform(image_size),
+            download=True,
+        )
+
+
 if __name__ == '__main__':
     from forward_process import CosScForwardProcess
 

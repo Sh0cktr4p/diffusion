@@ -1,6 +1,7 @@
 from typing import Callable, List
 import os
 import shutil
+from datetime import datetime
 
 import torch.nn as nn
 
@@ -67,7 +68,18 @@ class TrainingCallbackList(TrainingCallback):
 
 
 class InfoCallback(TrainingCallback):
-    def on_training_begin(self, model: nn.Module, **kwargs) -> None:
+    def __init__(self):
+        self.training_start_time = None
+        self.start_epoch = None
+
+    def on_training_begin(
+        self,
+        model: nn.Module,
+        epoch: int,
+        **kwargs
+    ) -> None:
+        self.training_start_time = datetime.now()
+        self.start_epoch = epoch
         print("=====================================")
         print("Starting training...")
         print("Model:")
@@ -80,6 +92,7 @@ class InfoCallback(TrainingCallback):
     def on_training_end(self, **kwargs) -> None:
         print("=====================================")
         print("Training finished.")
+        print(f"Time elapsed: {datetime.now() - self.training_start_time}")
         print("=====================================")
 
     def on_epoch_begin(self, epoch: int, **kwargs) -> None:
@@ -92,8 +105,11 @@ class InfoCallback(TrainingCallback):
         validation_loss: float | None,
         **kwargs,
     ) -> None:
+        time_delta = datetime.now() - self.training_start_time
         print("=====================================")
         print(f"Epoch {epoch} finished.")
+        print(f"Time elapsed: {time_delta}")
+        print(f"Time per epoch: {(time_delta) / (epoch - self.start_epoch)}")
         print(f"Training loss: {training_loss}")
         print(f"Validation loss: {validation_loss}")
         print("=====================================")
@@ -126,7 +142,7 @@ class SaveArtifactCallback(TrainingCallback):
 
     def on_epoch_end(self, epoch: int, **kwargs) -> None:
         if epoch % self.save_freq == 0:
-            path = self.get_epoch_path(epoch)
+            path = self.get_epoch_path(self.artifacts_base_path, epoch)
             os.mkdir(path)
             for callback in self.callbacks:
                 callback(path)

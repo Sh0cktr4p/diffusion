@@ -89,7 +89,10 @@ def callback_from_config(
             artifacts_base_path=config.artifact_dir,
             callbacks=[
                 # Save config file
-                lambda path: config.to_yaml(os.path.join(path, "config.yaml")),
+                lambda path: OmegaConf.to_yaml(
+                    config,
+                    os.path.join(path, "config.yaml"),
+                ),
                 # Save model file
                 lambda path: generative_model.save_model_state_dict(
                     os.path.join(path, "model.pt"),

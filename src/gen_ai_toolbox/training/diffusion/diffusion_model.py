@@ -70,12 +70,12 @@ class DiffusionModel(training.GenerativeModel):
             for i, (x, _) in enumerate(dataset_manager.train_loader):
                 self.train_model_batch(x, optimizer)
 
-        with eval(self.model):
+        with eval(self.model), th.inference_mode():
             t = self.get_random_t_vector(x.shape[0])
-            train_batch = next(iter(dataset_manager.train_loader))
-            val_batch = next(iter(dataset_manager.val_loader))
-            train_loss = self.get_simple_loss(train_batch, t)
-            val_loss = self.get_simple_loss(val_batch, t)
+            x_train, _ = next(iter(dataset_manager.train_loader))
+            x_val, _ = next(iter(dataset_manager.val_loader))
+            train_loss = self.get_simple_loss(x_train, t)
+            val_loss = self.get_simple_loss(x_val, t)
 
         callback.on_epoch_end(
             epoch=epoch,
@@ -99,7 +99,7 @@ class DiffusionModel(training.GenerativeModel):
         if callback is None:
             callback = TrainingCallback()
 
-        callback.on_training_begin(model=self.model)
+        callback.on_training_begin(model=self.model, epoch=start_epoch)
 
         with train(self.model):
             for epoch in range(n_epochs):

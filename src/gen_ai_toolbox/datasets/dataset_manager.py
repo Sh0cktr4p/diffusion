@@ -84,16 +84,16 @@ class ImageFolderDatasetManager(DatasetManager):
         )
 
 
-class MNISTImageDatasetManager(DatasetManager):
+class MNISTDatasetManager(DatasetManager):
     def __init__(self, image_size: int, batch_size: int):
-        dataset = MNISTImageDatasetManager._get_dataset(image_size)
+        dataset = MNISTDatasetManager._get_dataset(image_size)
         super().__init__(dataset, batch_size, image_size)
 
     @staticmethod
     def _get_dataset(image_size: int):
         return torchvision.datasets.MNIST(
             root="./data",
-            transform=MNISTImageDatasetManager._get_transform(image_size),
+            transform=MNISTDatasetManager._get_transform(image_size),
             download=True,
         )
 

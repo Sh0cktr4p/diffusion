@@ -2,7 +2,7 @@ import torch as th
 import torch.nn as nn
 
 
-from sinusoidal_position_embedding import SinusoidalPositionEmbedding
+from gen_ai_toolbox.models.utils import SinusoidalPositionEmbedding
 
 
 class UNetBlock(nn.Module):

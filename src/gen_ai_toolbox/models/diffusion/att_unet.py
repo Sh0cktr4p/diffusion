@@ -5,8 +5,8 @@ import torch.nn as nn
 
 from einops.layers.torch import Rearrange
 
-from block_attention import BlockAttention
-from sinusoidal_position_embedding import SinusoidalPositionEmbedding
+from gen_ai_toolbox.models.utils import BlockAttention
+from gen_ai_toolbox.models.utils import SinusoidalPositionEmbedding
 
 
 class ConvNextBlock(nn.Module):
@@ -178,7 +178,7 @@ class UpPath(nn.Module):
         return x
 
 
-class UNet(nn.Module):
+class AttentionUNet(nn.Module):
     def __init__(
         self,
         image_channels: int = 3,
@@ -267,6 +267,8 @@ class UNet(nn.Module):
 
 
 if __name__ == '__main__':
-    print("num params:", sum(p.numel() for p in UNet().parameters()))
+    print("num params:", sum(p.numel() for p in AttentionUNet().parameters()))
 
-    print(UNet()(th.randn(128, 3, 64, 64), th.randint(0, 1000, (128, 1))).shape)
+    print(AttentionUNet()(
+        th.randn(128, 3, 64, 64), th.randint(0, 1000, (128, 1))
+    ).shape)

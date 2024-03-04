@@ -13,8 +13,8 @@ version = "0.0.1"
 requires-python = ">=3.10"
 dependencies = [
     "hydra-core",
-    "torch",
-    "torchvision",
+    "torch==1.13.0",
+    "torchvision==0.14.0",
     "matplotlib",
 ]
 

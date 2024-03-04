@@ -21,9 +21,13 @@ training:
     params:
       lr: 3e-4
   lr_schedule: null
-  debug: true
   n_epochs: 100
+  save_every: 1
+debug: true
 verbose: true
 initial_epoch: 0
 artifact_dir: models/celebrity-diffusion
 device: cuda
+
+eval_only: false
+load_from: null

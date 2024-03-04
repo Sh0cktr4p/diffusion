@@ -36,13 +36,13 @@ class FnTrainingCallback(TrainingCallback):
         self._on_training_begin(**kwargs)
 
     def on_training_end(self, **kwargs) -> None:
-        self._on_training_end(kwargs)
+        self._on_training_end(**kwargs)
 
     def on_epoch_begin(self, **kwargs) -> None:
-        self._on_epoch_begin(kwargs)
+        self._on_epoch_begin(**kwargs)
 
     def on_epoch_end(self, **kwargs) -> None:
-        self._on_epoch_end(kwargs)
+        self._on_epoch_end(**kwargs)
 
 
 class TrainingCallbackList(TrainingCallback):
@@ -55,15 +55,15 @@ class TrainingCallbackList(TrainingCallback):
 
     def on_training_end(self, **kwargs) -> None:
         for callback in self.callbacks:
-            callback.on_training_end(kwargs)
+            callback.on_training_end(**kwargs)
 
     def on_epoch_begin(self, **kwargs) -> None:
         for callback in self.callbacks:
-            callback.on_epoch_begin(kwargs)
+            callback.on_epoch_begin(**kwargs)
 
     def on_epoch_end(self, **kwargs) -> None:
         for callback in self.callbacks:
-            callback.on_epoch_end(kwargs)
+            callback.on_epoch_end(**kwargs)
 
 
 class InfoCallback(TrainingCallback):
@@ -113,7 +113,7 @@ class SaveArtifactCallback(TrainingCallback):
         if os.path.exists(artifacts_base_path):
             print(f"Model save path {artifacts_base_path} already exists.")
             print("Override? (y/[n])")
-            if input() != "y":
+            if input() not in ["y", "Y"]:
                 raise ValueError("Model save path already exists")
             else:
                 shutil.rmtree(artifacts_base_path)

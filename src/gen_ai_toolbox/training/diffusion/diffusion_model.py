@@ -99,7 +99,7 @@ class DiffusionModel(training.GenerativeModel):
         if callback is None:
             callback = TrainingCallback()
 
-        callback.on_training_begin(self.model)
+        callback.on_training_begin(model=self.model)
 
         with train(self.model):
             for epoch in range(n_epochs):
@@ -111,7 +111,7 @@ class DiffusionModel(training.GenerativeModel):
                     callback=callback,
                 )
 
-        callback.on_training_end(self.model)
+        callback.on_training_end(model=self.model)
 
     def get_simple_loss(self, x_0: th.Tensor, t: th.Tensor) -> th.Tensor:
         device = self.device
@@ -142,7 +142,7 @@ class DiffusionModel(training.GenerativeModel):
     ) -> Iterator[th.Tensor]:
         yield x
 
-        for i in range(self.T - 1, -1, -1):
+        for i in range(self.noise_schedule.T - 1, -1, -1):
             x = self.noise_schedule.sample_timestep(
                 self.model,
                 x,

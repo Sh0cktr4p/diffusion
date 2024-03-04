@@ -28,7 +28,9 @@ def generative_model_from_config(config: OmegaConf) -> GenerativeModel:
     assert hasattr(config, "type") and config.type is not None
     if config.type == "Diffusion":
         model = diffusion.from_config(config)
-        if config.initial_epoch > 0:
+        if hasattr(config, "load_from") and config.load_from is not None:
+            model.load_model_state_dict(config.load_from)
+        elif config.initial_epoch > 0:
             model.load_model_state_dict(
                 os.path.join(
                     config.training.artifact_dir,
@@ -79,12 +81,12 @@ def callback_from_config(
     generative_model: GenerativeModel,
 ) -> TrainingCallback:
     callbacks = []
-    if config.training.verbose:
+    if config.verbose:
         callbacks.append(InfoCallback())
 
-    if not config.training.debug:
+    if not config.debug:
         callbacks.append(SaveArtifactCallback(
-            artifacts_base_dir=config.artifact_dir,
+            artifacts_base_path=config.artifact_dir,
             callbacks=[
                 # Save config file
                 lambda path: config.to_yaml(os.path.join(path, "config.yaml")),
@@ -99,7 +101,7 @@ def callback_from_config(
                     path=os.path.join(path, "renders.png"),
                 ),
             ],
-            save_freq=config.training.save_freq,
+            save_freq=config.training.save_every,
         ))
 
     return TrainingCallbackList(callbacks)
@@ -114,9 +116,7 @@ def train_from_config(
     if generative_model is None:
         generative_model = generative_model_from_config(config)
 
-    callback = None
-    if config.verbose:
-        pass
+    callback = callback_from_config(config, generative_model)
 
     if config.type == "Diffusion":
         optimizer = optimizer_from_config(

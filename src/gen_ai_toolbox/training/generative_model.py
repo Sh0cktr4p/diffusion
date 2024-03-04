@@ -24,7 +24,7 @@ class GenerativeModel(nn.Module):
     def render_batch(
         self,
         n_rows: int,
-        n_colums: int,
+        n_columns: int,
         path: str | None = None,
     ):
         raise NotImplementedError("render_batch method not implemented")

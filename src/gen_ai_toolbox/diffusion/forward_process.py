@@ -2,22 +2,27 @@ import torch as th
 import torch.nn as nn
 
 
-class ForwardProcess(nn.Module):
+class NoiseSchedule(nn.Module):
     def __init__(
         self,
-        T: int,
-        start: float = 0.0001,
-        end: float = 0.02,
+        betas: th.Tensor,
+        alphas: th.Tensor,
+        cum_alphas: th.Tensor,
     ):
         super().__init__()
-        self.T = T
-        betas, alphas, cum_alphas = self._get_schedule_variables(
-            T,
-            start,
-            end,
-        )
+
+        assert betas.shape == alphas.shape == cum_alphas.shape
+
+        self.T = betas.shape[0]
+        self._register_noise_schedule_buffers(betas, alphas, cum_alphas)
+
+    def _register_noise_schedule_buffers(
+        self,
+        betas: th.Tensor,
+        alphas: th.Tensor,
+        cum_alphas: th.Tensor,
+    ):
         prev_cum_alphas = th.cat((th.ones(1, 1, 1, 1), cum_alphas[:-1]))
-        # print(cum_alphas)
         self.register_buffer(
             "betas",
             betas,
@@ -68,11 +73,12 @@ class ForwardProcess(nn.Module):
             noise
         )
 
-    def _get_schedule_variables(self, T: int, start: float, end: float):
-        raise NotImplementedError("Subclasses must implement this method")
 
+class LinearNoiseSchedule(NoiseSchedule):
+    def __init__(self, T: int, start: float = 1e-4, end: float = 0.02):
+        betas, alphas, cum_alphas = self._get_schedule_variables(T, start, end)
+        super().__init__(betas, alphas, cum_alphas)
 
-class LinScForwardProcess(ForwardProcess):
     def _get_schedule_variables(self, T: int, start: float, end: float):
         betas = th.linspace(start, end, T).reshape(-1, 1, 1, 1)
         alphas = 1 - betas
@@ -80,23 +86,27 @@ class LinScForwardProcess(ForwardProcess):
         return betas, alphas, cum_alphas
 
 
-class CosScForwardProcess(ForwardProcess):
-    def _get_schedule_variables(self, T: int, start: float, end: float):
+class CosineNoiseSchedule(NoiseSchedule):
+    def __init__(self, T: int, s: float = 0.008):
+        betas, alphas, cum_alphas = self._get_schedule_variables(T, s)
+        super().__init__(betas, alphas, cum_alphas)
+
+    def _get_schedule_variables(self, T: int, s: float):
         f = th.cos(
-            (th.linspace(0, 1, T) + start) / (1 + start) * th.pi / 2
+            (th.linspace(0, 1, T) + s) / (1 + s) * th.pi / 2
         ) ** 2
         cum_alphas = (f / f[0]).reshape(-1, 1, 1, 1)
         alphas = (cum_alphas / th.cat(
             [th.ones(1, 1, 1, 1), cum_alphas[:-1]],
             dim=0,
-        )).clamp(0.001)
+        )).clamp(min=0.001)
         betas = 1 - alphas
         return betas, alphas, cum_alphas
 
 
 if __name__ == '__main__':
-    ls = LinScForwardProcess(1000, 0.0001)
-    cs = CosScForwardProcess(1000, 0.0001)
+    ls = LinearNoiseSchedule(1000, 0.0001)
+    cs = CosineNoiseSchedule(1000, 0.0001)
 
     import matplotlib.pyplot as plt
 

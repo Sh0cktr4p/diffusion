@@ -3,6 +3,8 @@ from typing import Tuple
 import torch as th
 import torch.nn as nn
 
+from src.gen_ai_toolbox.utils.torch_context_managers import eval
+
 
 class NoiseSchedule(nn.Module):
     def __init__(
@@ -25,6 +27,10 @@ class NoiseSchedule(nn.Module):
         cum_alphas: th.Tensor,
     ):
         prev_cum_alphas = th.cat((th.ones(1, 1, 1, 1), cum_alphas[:-1]))
+        sqrt_post_variance = th.sqrt(
+            betas * (1 - prev_cum_alphas) / (1 - cum_alphas)
+        )
+        sigmas = th.cat((th.zeros(1, 1, 1, 1), sqrt_post_variance[1:]))
         self.register_buffer(
             "betas",
             betas,
@@ -61,9 +67,8 @@ class NoiseSchedule(nn.Module):
             persistent=False,
         )
         self.register_buffer(
-            "sqrt_post_variance",
-            th.sqrt(betas * (1 - prev_cum_alphas) / (1 - cum_alphas)),
-            persistent=False,
+            "sigmas",
+            sigmas,
         )
 
     def diffuse(
@@ -94,21 +99,17 @@ class NoiseSchedule(nn.Module):
         )
 
     @th.inference_mode()
-    def predict_sigma(
-        self,
-        t: th.Tensor,
-    ) -> th.Tensor:
-        return self.sqrt_post_variance[t] if t[0] > 0 else 0
-
-    @th.inference_mode()
     def sample_timestep(
         self,
+        model: nn.Module,
         x: th.Tensor,
         t: th.Tensor,
     ) -> th.Tensor:
-        mu = self.predict_mu(x, t)
-        sigma = self.predict_sigma(t)
-        noise = th.randn_like(x) * sigma
+        with eval(model):
+            mu = self.predict_mu(model, x, t)
+
+        noise = th.randn_like(x) * self.sigmas[t]
+
         return mu + noise
 
 

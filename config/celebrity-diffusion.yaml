@@ -1,0 +1,21 @@
+type: Diffusion
+dataset:
+  id: CelebA
+  params:
+    image_size: 64
+    batch_size: 128
+    val_split: 0.1
+model:
+  id: SimpleUNet
+  params: {}
+training:
+  optimizer:
+    id: Adam
+    params:
+      lr: 3e-4
+  lr_schedule: null
+  verbose: true
+  debug: true
+  n_epochs: 100
+initial_epoch: 0
+artifact_dir: models/celebrity-diffusion

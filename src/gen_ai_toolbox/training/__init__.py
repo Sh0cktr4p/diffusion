@@ -4,7 +4,7 @@ import torch as th
 
 from omegaconf import OmegaConf
 
-from diffusion import from_config as diffusion_from_config
+from .diffusion import from_config as diffusion_from_config
 from gen_ai_toolbox.training.generative_model import GenerativeModel
 from gen_ai_toolbox.datasets import from_config as dataset_from_config
 from gen_ai_toolbox.utils.training_callback import (

@@ -7,7 +7,7 @@ import torch.nn as nn
 
 
 class TrainingCallback():
-    def on_training_begin(self, model: nn.Module) -> None:
+    def on_training_begin(self, epoch: int, model: nn.Module) -> None:
         pass
 
     def on_training_end(self, model: nn.Module) -> None:
@@ -16,7 +16,13 @@ class TrainingCallback():
     def on_epoch_begin(self, epoch: int, model: nn.Module) -> None:
         pass
 
-    def on_epoch_end(self, epoch: int, model: nn.Module) -> None:
+    def on_epoch_end(
+        self,
+        epoch: int,
+        model: nn.Module,
+        training_loss: float | None,
+        validation_loss: float | None,
+    ) -> None:
         pass
 
 
@@ -79,7 +85,7 @@ class InfoCallback(TrainingCallback):
         **kwargs
     ) -> None:
         self.training_start_time = datetime.now()
-        self.start_epoch = epoch
+        self.start_epoch = epoch - 1  # Avoid division by zero in on_epoch_end
         print("=====================================")
         print("Starting training...")
         print("Model:")

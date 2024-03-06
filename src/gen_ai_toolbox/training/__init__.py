@@ -85,14 +85,15 @@ def callback_from_config(
         callbacks.append(InfoCallback())
 
     if not config.debug:
+        def save_config(path: str):
+            with open(os.path.join(path, "config.yaml"), "w") as f:
+                OmegaConf.save(config, f)
+
         callbacks.append(SaveArtifactCallback(
             artifacts_base_path=config.artifact_dir,
             callbacks=[
                 # Save config file
-                lambda path: OmegaConf.to_yaml(
-                    config,
-                    os.path.join(path, "config.yaml"),
-                ),
+                save_config,
                 # Save model file
                 lambda path: generative_model.save_model_state_dict(
                     os.path.join(path, "model.pt"),
@@ -100,7 +101,7 @@ def callback_from_config(
                 # Save rendered images
                 lambda path: generative_model.render_batch(
                     n_rows=4,
-                    n_colums=4,
+                    n_columns=4,
                     path=os.path.join(path, "renders.png"),
                 ),
             ],

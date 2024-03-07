@@ -1,0 +1,45 @@
+type: GAN
+dataset:
+  id: CelebA
+  params:
+    img_size: 64
+    batch_size: 128
+    val_split: 0.1
+generator_model:
+  id: DCGenerator
+  params: 
+    z_dim: 100
+    output_channels: 3
+    feature_map_size: 64
+    squash_output: true
+critic_model:
+  id: DCDiscriminator
+  params:
+    input_channels: 3
+    feature_map_size: 64
+    use_bn: false
+    squash_output: false
+training:
+  generator_optimizer:
+    id: Adam
+    params:
+      lr: 3e-4
+  critic_optimizer:
+    id: Adam
+    params:
+      lr: 3e-4
+  generator_lr_schedule: null
+  critic_lr_schedule: null
+  n_epochs: 100
+  save_every: 1
+  n_critic_updates: 5
+  gp_lambda: 10
+debug: true
+verbose: true
+initial_epoch: 0
+artifact_dir: models/celebrity-gan
+device: cuda
+
+eval_only: false
+load_from: null
+

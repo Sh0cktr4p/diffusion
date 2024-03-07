@@ -4,22 +4,26 @@ import torch.nn as nn
 
 
 @contextmanager
-def eval(model: nn.Module):
-    training_mode = model.training
+def eval(*models: nn.Module):
+    training_modes = [model.training for model in models]
     try:
-        model.eval()
+        for model in models:
+            model.eval()
         yield
     finally:
-        if training_mode:
-            model.train()
+        for training_mode, model in zip(training_modes, models):
+            if training_mode:
+                model.train()
 
 
 @contextmanager
-def train(model: nn.Module):
-    training_mode = model.training
+def train(*models: nn.Module):
+    training_modes = [model.training for model in models]
     try:
-        model.train()
+        for model in models:
+            model.train()
         yield
     finally:
-        if not training_mode:
-            model.eval()
+        for training_mode, model in zip(training_modes, models):
+            if not training_mode:
+                model.eval()

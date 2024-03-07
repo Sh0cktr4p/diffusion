@@ -78,6 +78,33 @@ class DatasetManager:
 
         return reverse_transform(tensor)
 
+    @staticmethod
+    def render_batch(
+        tensor: th.Tensor,
+        n_rows: int,
+        n_columns: int,
+        img_dim: float = 2.0,
+        path: str | None = None,
+    ):
+        assert tensor.shape[0] == n_rows * n_columns
+
+        images = [DatasetManager._to_pil_image(row) for row in tensor]
+
+        _, axes = plt.subplots(
+            n_rows,
+            n_columns,
+            figsize=(n_columns*img_dim, n_rows*img_dim)
+        )
+
+        for i, img in enumerate(images):
+            axes[i // n_columns, i % n_columns].imshow(img)
+            axes[i // n_columns, i % n_columns].axis("off")
+
+        if path is None:
+            plt.show()
+        else:
+            plt.savefig(path)
+
     def show_images(self, num_samples=20, cols=4, from_train_set: bool = True):
         plt.figure(figsize=(10, 10))
         for i, img in list(enumerate(

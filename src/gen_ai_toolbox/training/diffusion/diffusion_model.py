@@ -74,8 +74,8 @@ class DiffusionModel(training.GenerativeModel):
             t = self.get_random_t_vector(x.shape[0])
             x_train, _ = next(iter(dataset_manager.train_loader))
             x_val, _ = next(iter(dataset_manager.val_loader))
-            train_loss = self.get_simple_loss(x_train, t)
-            val_loss = self.get_simple_loss(x_val, t)
+            train_loss = self.get_simple_loss(x_train, t).item()
+            val_loss = self.get_simple_loss(x_val, t).item()
 
         callback.on_epoch_end(
             epoch=epoch,
@@ -209,25 +209,13 @@ class DiffusionModel(training.GenerativeModel):
             for batch in self.sample_trajectory_tensor_iterator(batch):
                 pass
 
-        images = [
-            DatasetManager._to_pil_image(row)
-            for row in batch
-        ]
-
-        _, axes = plt.subplots(
-            n_rows,
-            n_columns,
-            figsize=(n_columns*img_dim, n_rows*img_dim)
+        DatasetManager.render_batch(
+            batch,
+            n_rows=n_rows,
+            n_columns=n_columns,
+            img_dim=img_dim,
+            path=path,
         )
-
-        for i, img in enumerate(images):
-            axes[i // n_columns, i % n_columns].imshow(img)
-            axes[i // n_columns, i % n_columns].axis("off")
-
-        if path is None:
-            plt.show()
-        else:
-            plt.savefig(path)
 
     def save_model_state_dict(
         self,

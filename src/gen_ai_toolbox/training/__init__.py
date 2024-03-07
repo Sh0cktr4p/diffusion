@@ -6,6 +6,7 @@ from omegaconf import OmegaConf
 
 from gen_ai_toolbox.training.generative_model import GenerativeModel
 from . import diffusion
+from . import gan
 from gen_ai_toolbox.datasets import from_config as dataset_from_config
 from gen_ai_toolbox.utils.training_callback import (
     TrainingCallback,
@@ -28,22 +29,26 @@ def generative_model_from_config(config: OmegaConf) -> GenerativeModel:
     assert hasattr(config, "type") and config.type is not None
     if config.type == "Diffusion":
         model = diffusion.from_config(config)
-        if hasattr(config, "load_from") and config.load_from is not None:
-            model.load_model_state_dict(config.load_from)
-        elif config.initial_epoch > 0:
-            model.load_model_state_dict(
-                os.path.join(
-                    config.training.artifact_dir,
-                    SaveArtifactCallback.get_epoch_path(
-                        config.artifact_dir,
-                        config.initial_epoch,
-                    ),
-                    "model.pt",
-                ),
-            )
-        return model
+    elif config.type == "GAN":
+        model = gan.from_config(config)
+        model.initialize_weights()
     else:
         raise ValueError(f"Unknown trainer type {config.type}.")
+
+    if hasattr(config, "load_from") and config.load_from is not None:
+        model.load_model_state_dict(config.load_from)
+    elif config.initial_epoch > 0:
+        model.load_model_state_dict(
+            os.path.join(
+                config.training.artifact_dir,
+                SaveArtifactCallback.get_epoch_path(
+                    config.artifact_dir,
+                    config.initial_epoch,
+                ),
+                "model.pt",
+            ),
+        )
+    return model
 
 
 def optimizer_from_config(
@@ -121,28 +126,69 @@ def train_from_config(
         generative_model = generative_model_from_config(config)
 
     callback = callback_from_config(config, generative_model)
+    dataset_manager = dataset_from_config(config.dataset)
 
     if config.type == "Diffusion":
         optimizer = optimizer_from_config(
             config.training.optimizer,
             generative_model.model
         )
-        lr_schedule = None
+        lr_scheduler = None
         if (
             hasattr(config.training, "lr_schedule") and
             config.training.lr_schedule is not None
         ):
-            lr_schedule = lr_schedule_from_config(
+            lr_scheduler = lr_schedule_from_config(
                 config.training.lr_schedule,
                 optimizer
             )
-        dataset_manager = dataset_from_config(config.dataset)
 
         generative_model.train_model(
             n_epochs=config.training.n_epochs,
             optimizer=optimizer,
             dataset_manager=dataset_manager,
-            lr_schedule=lr_schedule,
+            lr_schedule=lr_scheduler,
+            callback=callback,
+            start_epoch=config.initial_epoch,
+        )
+    elif config.type == "GAN":
+        gen_optimizer = optimizer_from_config(
+            config.training.generator_optimizer,
+            generative_model.generator_model
+        )
+        crit_optimizer = optimizer_from_config(
+            config.training.critic_optimizer,
+            generative_model.critic_model
+        )
+        gen_lr_scheduler = None
+        if (
+            hasattr(config.training, "generator_lr_schedule") and
+            config.training.generator_lr_schedule is not None
+        ):
+            gen_lr_scheduler = lr_schedule_from_config(
+                config.training.generator_lr_schedule,
+                gen_optimizer
+            )
+
+        crit_lr_scheduler = None
+        if (
+            hasattr(config.training, "critic_lr_schedule") and
+            config.training.critic_lr_schedule is not None
+        ):
+            crit_lr_scheduler = lr_schedule_from_config(
+                config.training.critic_lr_schedule,
+                crit_optimizer
+            )
+
+        generative_model.train_model(
+            n_epochs=config.training.n_epochs,
+            n_critic_updates=config.training.n_critic_updates,
+            gp_lambda=config.training.gp_lambda,
+            generator_optimizer=gen_optimizer,
+            critic_optimizer=crit_optimizer,
+            dataset_manager=dataset_manager,
+            gen_lr_scheduler=gen_lr_scheduler,
+            crit_lr_scheduler=crit_lr_scheduler,
             callback=callback,
             start_epoch=config.initial_epoch,
         )

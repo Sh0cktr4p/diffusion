@@ -3,11 +3,14 @@ import torch.nn as nn
 from omegaconf import OmegaConf
 
 from . import diffusion
+from . import gan
 
 
 MODELS = {
     "SimpleUNet": diffusion.SimpleUNet,
     "AttentionUNet": diffusion.AttentionUNet,
+    "DCGenerator": gan.Generator,
+    "DCDiscriminator": gan.Discriminator,
 }
 
 
